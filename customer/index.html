@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DonatKu 🍩</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-header">
+  <div class="brand">
+    <span class="brand-icon">🍩</span>
+    <span>DonatKu</span>
+  </div>
+  <button class="header-action" id="logoutBtn" title="Logout">🚪</button>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h1>Halo, <span id="userName">...</span>! 👋</h1>
+    <p class="muted">Kamu berhasil login ke DonatKu.</p>
+    <p class="muted">Kelas: <strong id="userClass">-</strong></p>
+    <p class="muted">Halaman berikutnya (menu, keranjang, dll) akan dibangun di FASE 3B.</p>
+  </div>
+
+  <div class="card">
+    <h3>✅ Test Koneksi Berhasil</h3>
+    <p>Berikut data dari database yang akan dipakai nanti:</p>
+    <div id="menuPreview">Memuat...</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../shared/supabase.js"></script>
+<script src="../shared/utils.js"></script>
+<script src="../shared/api.js"></script>
+
+<script>
+(async function() {
+  // Cek login
+  const current = await Auth.getCurrentUser();
+  if (!current) {
+    window.location.href = 'login.html?redirect=index.html';
+    return;
+  }
+
+  document.getElementById('userName').textContent = current.profile.full_name;
+  document.getElementById('userClass').textContent = current.profile.class_name;
+
+  // Logout
+  document.getElementById('logoutBtn').onclick = async function() {
+    const ok = await UI.confirm({
+      title: 'Logout?',
+      message: 'Yakin mau keluar dari DonatKu?',
+      confirmLabel: 'Logout'
+    });
+    if (!ok) return;
+    await Auth.logout();
+    UI.toast('✓ Berhasil logout', 'success');
+    setTimeout(function() {
+      window.location.href = 'login.html';
+    }, 500);
+  };
+
+  // Preview menu
+  try {
+    const toppings = await API.getToppings(true);
+    document.getElementById('menuPreview').innerHTML =
+      '<p><b>' + toppings.length + ' topping tersedia:</b></p>' +
+      '<ul style="margin:8px 0 0; padding-left:20px;">' +
+      toppings.map(function(t) {
+        return '<li>' + U.escapeHTML(t.name) + ' — ' + U.rupiah(t.base_price) +
+          (t.crumble_eligible ? ' <span style="color:#3B82F6;">(bisa +crumble)</span>' : '') + '</li>';
+      }).join('') +
+      '</ul>';
+  } catch (e) {
+    document.getElementById('menuPreview').innerHTML = '<p style="color:red;">Error: ' + e.message + '</p>';
+  }
+})();
+</script>
+</body>
+</html>
